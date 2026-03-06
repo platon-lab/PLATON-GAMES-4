@@ -30,7 +30,7 @@
             flex-direction: column;
             align-items: center;
             color: white;
-            /* Дозволяємо прокрутку */
+            overflow-x: hidden; /* Щоб не було скролу при вибуху */
             overflow-y: auto; 
             padding: 40px 20px;
             user-select: none;
@@ -50,6 +50,7 @@
             text-align: center;
             margin-bottom: 50px;
             animation: fadeInDown 1s ease-out;
+            transition: transform 1.5s cubic-bezier(0.6, -0.28, 0.735, 0.045), opacity 1s;
         }
 
         h1 {
@@ -65,8 +66,8 @@
 
         .games-container {
             display: flex;
-            flex-direction: column; /* Картки в стовпчик */
-            gap: 50px; /* Відстань між картками */
+            flex-direction: column; 
+            gap: 50px; 
             justify-content: center;
             align-items: center;
             width: 100%;
@@ -85,7 +86,7 @@
             border: 5px solid rgba(255, 215, 0, 0.3);
             backdrop-filter: blur(10px);
             background: rgba(255, 255, 255, 0.1);
-            flex-shrink: 0; /* Щоб картки не стискалися */
+            flex-shrink: 0;
         }
 
         .game-card:hover {
@@ -139,6 +140,41 @@
             color: white;
         }
 
+        /* ЕФЕКТИ ВИБУХУ */
+        .exploded {
+            pointer-events: none;
+        }
+
+        .card-fly-away {
+            transition: transform 2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 2s !important;
+            opacity: 0 !important;
+        }
+
+        .header-fall {
+            transform: translateY(120vh) rotate(15deg) !important;
+            opacity: 0;
+        }
+
+        /* ВІДЕО ОВЕРЛЕЙ */
+        #endVideoContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: none;
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         /* Анімації */
         @keyframes fadeInDown {
             from { opacity: 0; transform: translateY(-50px); }
@@ -156,15 +192,15 @@
         }
     </style>
 </head>
-<body>
+<body id="mainBody">
 
     <div class="background-overlay"></div>
 
-    <header class="header">
+    <header class="header" id="mainHeader">
         <h1>PLATON GAMES 4</h1>
     </header>
 
-    <main class="games-container">
+    <main class="games-container" id="gamesGrid">
         <div class="game-card">
             <a href="https://platon-lab.github.io/Tower-defense/" target="_blank" style="text-decoration: none; color: inherit;">
                 <img src="Tower.png" alt="Tower Defense Game">
@@ -194,7 +230,94 @@
                 </div>
             </a>
         </div>
+
+        <div class="game-card">
+            <a href="https://platon-lab.github.io/Baloon-pop/" target="_blank" style="text-decoration: none; color: inherit;">
+                <img src="Pop.png" alt="Baloon Pop Game">
+                <div class="play-overlay">
+                    <span class="play-icon">🧿</span>
+                    <span class="play-text">ГРАТИ</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="game-card">
+            <a href="https://platon-lab.github.io/Laser-Dodge/" target="_blank" style="text-decoration: none; color: inherit;">
+                <img src="Laser.png" alt="Laser Dodge Game">
+                <div class="play-overlay">
+                    <span class="play-icon">❤️</span>
+                    <span class="play-text">ГРАТИ</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="game-card">
+            <a href="https://platon-lab.github.io/Magnet-Run/" target="_blank" style="text-decoration: none; color: inherit;">
+                <img src="Magnet.png" alt="Magnet Run Game">
+                <div class="play-overlay">
+                    <span class="play-icon">🧲</span>
+                    <span class="play-text">ГРАТИ</span>
+                </div>
+            </a>
+        </div>
     </main>
+
+    <div id="endVideoContainer">
+        <video id="endVideo">
+            <source src="End.mp4" type="video/mp4">
+            Ваш браузер не підтримує відео.
+        </video>
+    </div>
+
+    <script>
+        let clickCount = 0;
+        const body = document.getElementById('mainBody');
+        const header = document.getElementById('mainHeader');
+        const cards = document.querySelectorAll('.game-card');
+        const videoContainer = document.getElementById('endVideoContainer');
+        const video = document.getElementById('endVideo');
+
+        body.addEventListener('click', (e) => {
+            // Перевіряємо, чи клік був НЕ по картці гри
+            if (e.target.closest('.game-card')) return;
+
+            clickCount++;
+
+            if (clickCount === 20) {
+                triggerExplosion();
+            }
+        });
+
+        function triggerExplosion() {
+            body.classList.add('exploded');
+            
+            // Заголовок падає вниз
+            header.classList.add('header-fall');
+
+            // Картки розлітаються в різні сторони
+            cards.forEach((card, index) => {
+                const randomX = (Math.random() - 0.5) * 2000;
+                const randomY = (Math.random() - 0.5) * 2000;
+                const randomRot = (Math.random() - 0.5) * 720;
+                
+                card.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRot}deg)`;
+                card.classList.add('card-fly-away');
+            });
+
+            // Через 3 секунди вмикаємо відео
+            setTimeout(() => {
+                videoContainer.style.display = 'flex';
+                video.play().catch(error => {
+                    console.log("Автоплей відео заблоковано, чекаємо взаємодії");
+                });
+            }, 3000);
+        }
+
+        // Коли відео закінчується - перекидаємо на сайт PLATON GAMES 5
+        video.onended = function() {
+            window.location.href = "https://platon-lab.github.io/PLATON-GAMES-5/";
+        };
+    </script>
 
 </body>
 </html>
